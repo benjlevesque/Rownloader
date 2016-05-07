@@ -55,10 +55,10 @@ namespace Rownloader.Controllers
                 {
                     using (var client = new HttpClient { BaseAddress = new Uri("http://www.omdbapi.com/") })
                     {
-                        using (var response = client.GetAsync(FormatUrl("", new { t = showName, type="series" })).Result)
+                        using (var response = client.GetAsync(FormatUrl("", new { t = showName, type = "series", plot = "short" })).Result)
                         {
                             var str = response.Content.ReadAsStringAsync().Result;
-                            //Console.WriteLine(str);
+                            System.Diagnostics.Debug.WriteLine(str);
                             var r = JsonConvert.DeserializeObject<SearchTvResult>(str);
                             //var name = response.Data.;
                             ApiResults.Add(showName, r);
@@ -70,10 +70,20 @@ namespace Rownloader.Controllers
             var api = ApiResults[showName];
             return api ?? new SearchTvResult();
         }
+
+
+        private Regex _regex = new Regex("(?<name>[a-zA-Z.0-9]*).[Ss](?<season>[0-9]{2})[Ee](?<episode>[0-9]{2}).(?<quality>[a-zA-Z0-9]*).(.*).(?<extension>mkv|avi)");
+        private IDictionary<string, Match> Files => Directory.GetFiles(Options.FolderPath).ToDictionary(x => x, x => _regex.Match(x));
+
+        public IActionResult Debug()
+        {
+            return Json(Files.Select(x => new { x.Key, x.Value.Success}));
+        }
+
         public IActionResult Index(string query)
         {
-            var regex = new Regex("(?<name>[a-zA-Z.0-9]*).[Ss](?<season>[0-9]{2})[Ee](?<episode>[0-9]{2}).(?<quality>[a-zA-Z0-9]*).(.*).(?<extension>mkv|avi)");
-            var shows = Directory.GetFiles(Options.FolderPath).Select(x => regex.Match(x)).Where(m => m.Success).Select(x =>
+
+            var shows = Files.Values.Where(m => m.Success).Select(x =>
             new
             {
                 Filename = x.Value,
@@ -85,7 +95,7 @@ namespace Rownloader.Controllers
             })
             .Where(x => query == null || x.Filename.ToLower().Contains(query.ToLower()))
             .ToList()
-            .GroupBy(x => x.Name).Select(x => new ShowViewModel
+            .GroupBy(x => x.Name, StringComparer.CurrentCultureIgnoreCase).Select(x => new ShowViewModel
             {
                 Name = x.Key,
                 ThumbnailUrl = GetApiInfo(x.Key).Poster,
