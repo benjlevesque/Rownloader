@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25123.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{652A212D-2557-45D0-B293-5FF0B0C739BB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{1AEDAA91-551B-4B30-B875-D400C49DF664}"
+	ProjectSection(SolutionItems) = preProject
+		global.json = global.json
+	EndProjectSection
+EndProject
+Project("{8BB2217D-0F2D-49D1-97BC-3654ED321F3B}") = "Rownloader", "src\Rownloader\Rownloader.xproj", "{5CC06FC8-564E-4786-A62E-1E3B17B1E3B5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5CC06FC8-564E-4786-A62E-1E3B17B1E3B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5CC06FC8-564E-4786-A62E-1E3B17B1E3B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5CC06FC8-564E-4786-A62E-1E3B17B1E3B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5CC06FC8-564E-4786-A62E-1E3B17B1E3B5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{5CC06FC8-564E-4786-A62E-1E3B17B1E3B5} = {652A212D-2557-45D0-B293-5FF0B0C739BB}
+	EndGlobalSection
+EndGlobal
