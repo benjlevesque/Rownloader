@@ -31,7 +31,7 @@ namespace Rownloader.Controllers
     }
     public class ShowViewModel
     {
-        public int ImdbId { get; internal set; }
+        public string ImdbId { get; internal set; }
         public string Name { get; set; }
         public IEnumerable<SeasonViewModel> Seasons { get; set; }
         public string ThumbnailUrl { get; internal set; }
@@ -50,28 +50,34 @@ namespace Rownloader.Controllers
             showName = showName.ToLower();
             if (!ApiResults.ContainsKey(showName))
             {
-                using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
+                lock ("toto")
                 {
-                    SearchTvResult r;
-                    using (var response = client.GetAsync(FormatUrl("search/tv", new { query = showName })).Result)
+                    using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
                     {
-                        var str = response.Content.ReadAsStringAsync().Result;
-                        var data = JsonConvert.DeserializeObject<ApiResult<SearchTvResult>>(str);
-                        //var name = response.Data.;
-                        r = data.results.FirstOrDefault();
-                    }
-                    if (r != null)
-                    {
-                        using (var response = client.GetAsync(FormatUrl($"tv/{r.id}/external_links")).Result)
+                        SearchTvResult r;
+                        using (var response = client.GetAsync(FormatUrl("search/tv", new { query = showName })).Result)
                         {
                             var str = response.Content.ReadAsStringAsync().Result;
                             var data = JsonConvert.DeserializeObject<ApiResult<SearchTvResult>>(str);
                             //var name = response.Data.;
-                            //r.ImdbId = data.results.Where(x=>x.)
+                            r = data.results.FirstOrDefault();
                         }
-                    }
+                        if (r != null)
+                        {
+                            var url = FormatUrl($"tv/{r.id}/external_ids");
+                            using (var response = client.GetAsync(url).Result)
+                            {
+                                var str = response.Content.ReadAsStringAsync().Result;
+                                var data = JsonConvert.DeserializeObject<ExternalIdsResults>(str);
+                                Console.WriteLine(data);
 
-                    ApiResults.Add(showName, r);
+                                //var name = response.Data.;
+                                r.ImdbId = data.imdb_id;
+                            }
+                        }
+                        ApiResults.Add(showName, r);
+
+                    }
                 }
             }
             var api = ApiResults[showName];
@@ -96,7 +102,7 @@ namespace Rownloader.Controllers
             {
                 Name = x.Key,
                 ThumbnailUrl = ImageRootUrl + GetApiInfo(x.Key).poster_path,
-                ImdbId = GetApiInfo(x.Key).id,
+                ImdbId = GetApiInfo(x.Key).ImdbId,
                 VoteAverage = GetApiInfo(x.Key).vote_average,
                 VoteCount = GetApiInfo(x.Key).vote_count,
                 Seasons = x.GroupBy(y => y.Season).Select(y => new SeasonViewModel
@@ -120,7 +126,7 @@ namespace Rownloader.Controllers
         static string FormatUrl(string path, IDictionary<string, object> parameters)
         {
             if (parameters == null)
-                return path;
+                parameters = new Dictionary<string, object>();
 
             parameters.Add("api_key", "0f7de12810d35bd62dd0e93978f39cae");
 
@@ -188,7 +194,17 @@ namespace Rownloader.Controllers
         public int vote_count { get; set; }
         public string name { get; set; }
         public string original_name { get; set; }
-        public object ImdbId { get; internal set; }
+        public string ImdbId { get; internal set; }
+    }
+
+    public class ExternalIdsResults
+    {
+        public string imdb_id { get; set; }
+        public string freebase_mid { get; set; }
+        public string freebase_id { get; set; }
+        public string tvdb_id { get; set; }
+        public string tvrage_id { get; set; }
+        public int id { get; set; }
     }
 
     public class ApiResult<T>
