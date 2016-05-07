@@ -45,26 +45,37 @@ namespace Rownloader.Controllers
         {
             Options = optionsAccessor.Value;
         }
-        public static Result GetApiInfo(string showName)
+        public static SearchTvResult GetApiInfo(string showName)
         {
             showName = showName.ToLower();
             if (!ApiResults.ContainsKey(showName))
             {
                 using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
                 {
+                    SearchTvResult r;
                     using (var response = client.GetAsync(FormatUrl("search/tv", new { query = showName })).Result)
                     {
                         var str = response.Content.ReadAsStringAsync().Result;
-                        var data = JsonConvert.DeserializeObject<ApiResult<Result>>(str);
+                        var data = JsonConvert.DeserializeObject<ApiResult<SearchTvResult>>(str);
                         //var name = response.Data.;
-
-
-                        ApiResults.Add(showName, data.results.FirstOrDefault());
+                        r = data.results.FirstOrDefault();
                     }
+                    if (r != null)
+                    {
+                        using (var response = client.GetAsync(FormatUrl($"tv/{r.id}/external_links")).Result)
+                        {
+                            var str = response.Content.ReadAsStringAsync().Result;
+                            var data = JsonConvert.DeserializeObject<ApiResult<SearchTvResult>>(str);
+                            //var name = response.Data.;
+                            //r.ImdbId = data.results.Where(x=>x.)
+                        }
+                    }
+
+                    ApiResults.Add(showName, r);
                 }
             }
             var api = ApiResults[showName];
-            return api ?? new Result();
+            return api ?? new SearchTvResult();
         }
         public IActionResult Index(string query)
         {
@@ -106,7 +117,7 @@ namespace Rownloader.Controllers
             return View(shows);
         }
 
-        static string FormatUrl(string path, IDictionary<string, object> parameters = null)
+        static string FormatUrl(string path, IDictionary<string, object> parameters)
         {
             if (parameters == null)
                 return path;
@@ -114,6 +125,14 @@ namespace Rownloader.Controllers
             parameters.Add("api_key", "0f7de12810d35bd62dd0e93978f39cae");
 
             return $"{path}?{string.Join("&", parameters.Select(x => $"{x.Key}={x.Value}"))}";
+        }
+        static string FormatUrl(string path1, string path2, string path3, object parameters = null)
+        {
+            return FormatUrl($"{path1}/{path2}/{path3}", parameters);
+        }
+        static string FormatUrl(string path1, string path2, object parameters = null)
+        {
+            return FormatUrl($"{path1}/{path2}", parameters);
         }
         static string FormatUrl(string path, object parameters = null)
         {
@@ -127,7 +146,7 @@ namespace Rownloader.Controllers
 
 
         private const string ImageRootUrl = "http://image.tmdb.org/t/p/w92";
-        private static IDictionary<string, Result> ApiResults = new Dictionary<string, Result>();
+        private static IDictionary<string, SearchTvResult> ApiResults = new Dictionary<string, SearchTvResult>();
 
         public void Download(string filename)
         {
@@ -154,7 +173,7 @@ namespace Rownloader.Controllers
         }
     }
 
-    public class Result
+    public class SearchTvResult
     {
         public string poster_path { get; set; }
         public double popularity { get; set; }
@@ -169,6 +188,7 @@ namespace Rownloader.Controllers
         public int vote_count { get; set; }
         public string name { get; set; }
         public string original_name { get; set; }
+        public object ImdbId { get; internal set; }
     }
 
     public class ApiResult<T>
