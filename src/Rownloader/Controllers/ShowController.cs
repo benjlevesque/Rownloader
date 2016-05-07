@@ -1,15 +1,18 @@
 ﻿using Microsoft.AspNet.Mvc;
 using Microsoft.Extensions.OptionsModel;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Rownloader.Controllers
 {
-    
+
     public class EpisodeViewModel
     {
         public string Name { get; set; }
@@ -74,20 +77,38 @@ namespace Rownloader.Controllers
             return View(files);
         }
 
-        public ActionResult Thumbnail(string showName)
+        string FormatUrl(string path, IDictionary<string, object> parameters = null)
         {
-            throw new NotImplementedException();
-            /*var client = new RestClient("http://api.themoviedb.org/3/");
-            var request = new RestRequest("search/tv");
-            request.AddParameter("api_key", "0f7de12810d35bd62dd0e93978f39cae");
-            request.AddParameter("query", showName);
+            if (parameters == null)
+                return path;
 
+            parameters.Add("api_key", "0f7de12810d35bd62dd0e93978f39cae");
 
-            var response = client.Execute<ApiResult<Result>>(request);
-            //var name = response.Data.;
+            return $"{path}?{string.Join("&", parameters.Select(x => $"{x.Key}={x.Value}"))}";
+        }
+        string FormatUrl(string path, object parameters = null)
+        {
+            return FormatUrl(path, parameters?.GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                .ToDictionary
+                (
+                    propInfo => propInfo.Name,
+                    propInfo => propInfo.GetValue(parameters, null)
+                ));
+        }
 
-            return Redirect("http://image.tmdb.org/t/p/w92" + response.Data.results.First().poster_path);
-            */
+        public async Task<ActionResult> Thumbnail(string showName)
+        {
+            using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
+            {
+                using (var response = await client.GetAsync(FormatUrl("search/tv", new { query = showName })))
+                {
+                    var str = await response.Content.ReadAsStringAsync();
+                    var data = JsonConvert.DeserializeObject<ApiResult<Result>>(str);
+                    //var name = response.Data.;
+
+                    return Redirect("http://image.tmdb.org/t/p/w92" + data.results.FirstOrDefault()?.poster_path);
+                }
+            }
         }
 
         public void Download(string filename)
