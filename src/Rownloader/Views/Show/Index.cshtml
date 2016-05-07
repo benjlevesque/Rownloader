@@ -1,0 +1,44 @@
+﻿@using Rownloader.Controllers
+@model IEnumerable<ShowViewModel>
+<p></p>
+
+@foreach (var show in Model)
+{
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h3>@show.Name</h3>
+        </div>
+        <div class="panel-body">
+
+            @foreach (var season in show.Seasons)
+            {
+
+                <h4>Season #@season.Season</h4>
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th>Episode</th>
+                            <th>Quality</th>
+                            <th>Extension</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var episode in season.Episodes)
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-action="Download" asp-route-filename="@episode.Filename"><i class="fa fa-download"></i></a>
+                                </td>
+                                <td>@episode.Episode</td>
+                                <td>@episode.Quality</td>
+                                <td>@episode.Extension</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+
+            }
+        </div>
+    </div>
+}
