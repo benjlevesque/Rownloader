@@ -4,5 +4,5 @@ COPY . /demo
 WORKDIR /demo
 RUN ["dnu", "restore"]
 
-EXPOSE 5004
+EXPOSE 5000
 ENTRYPOINT ["dnx", "web"]
