@@ -35,8 +35,9 @@ namespace Rownloader.Controllers
         public string Name { get; set; }
         public IEnumerable<SeasonViewModel> Seasons { get; set; }
         public string ThumbnailUrl { get; internal set; }
-        public double VoteAverage { get; internal set; }
-        public int VoteCount { get; internal set; }
+        public string Rating { get; internal set; }
+        public string VoteCount { get; internal set; }
+        public string Plot { get; set; }
     }
     public class ShowController : Controller
     {
@@ -52,30 +53,16 @@ namespace Rownloader.Controllers
             {
                 lock ("toto")
                 {
-                    using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
+                    using (var client = new HttpClient { BaseAddress = new Uri("http://www.omdbapi.com/") })
                     {
-                        SearchTvResult r;
-                        using (var response = client.GetAsync(FormatUrl("search/tv", new { query = showName })).Result)
+                        using (var response = client.GetAsync(FormatUrl("", new { t = showName, type="series" })).Result)
                         {
                             var str = response.Content.ReadAsStringAsync().Result;
-                            var data = JsonConvert.DeserializeObject<ApiResult<SearchTvResult>>(str);
+                            //Console.WriteLine(str);
+                            var r = JsonConvert.DeserializeObject<SearchTvResult>(str);
                             //var name = response.Data.;
-                            r = data.results.FirstOrDefault();
+                            ApiResults.Add(showName, r);
                         }
-                        if (r != null)
-                        {
-                            var url = FormatUrl($"tv/{r.id}/external_ids");
-                            using (var response = client.GetAsync(url).Result)
-                            {
-                                var str = response.Content.ReadAsStringAsync().Result;
-                                var data = JsonConvert.DeserializeObject<ExternalIdsResults>(str);
-                                Console.WriteLine(data);
-
-                                //var name = response.Data.;
-                                r.ImdbId = data.imdb_id;
-                            }
-                        }
-                        ApiResults.Add(showName, r);
 
                     }
                 }
@@ -101,10 +88,11 @@ namespace Rownloader.Controllers
             .GroupBy(x => x.Name).Select(x => new ShowViewModel
             {
                 Name = x.Key,
-                ThumbnailUrl = ImageRootUrl + GetApiInfo(x.Key).poster_path,
-                ImdbId = GetApiInfo(x.Key).ImdbId,
-                VoteAverage = GetApiInfo(x.Key).vote_average,
-                VoteCount = GetApiInfo(x.Key).vote_count,
+                ThumbnailUrl = GetApiInfo(x.Key).Poster,
+                ImdbId = GetApiInfo(x.Key).imdbID,
+                Rating = GetApiInfo(x.Key).imdbRating,
+                VoteCount = GetApiInfo(x.Key).imdbVotes,
+
                 Seasons = x.GroupBy(y => y.Season).Select(y => new SeasonViewModel
                 {
                     Season = y.Key,
@@ -128,7 +116,7 @@ namespace Rownloader.Controllers
             if (parameters == null)
                 parameters = new Dictionary<string, object>();
 
-            parameters.Add("api_key", "0f7de12810d35bd62dd0e93978f39cae");
+            //parameters.Add("api_key", "0f7de12810d35bd62dd0e93978f39cae");
 
             return $"{path}?{string.Join("&", parameters.Select(x => $"{x.Key}={x.Value}"))}";
         }
@@ -181,38 +169,25 @@ namespace Rownloader.Controllers
 
     public class SearchTvResult
     {
-        public string poster_path { get; set; }
-        public double popularity { get; set; }
-        public int id { get; set; }
-        public string backdrop_path { get; set; }
-        public double vote_average { get; set; }
-        public string overview { get; set; }
-        public string first_air_date { get; set; }
-        public List<object> origin_country { get; set; }
-        public List<object> genre_ids { get; set; }
-        public string original_language { get; set; }
-        public int vote_count { get; set; }
-        public string name { get; set; }
-        public string original_name { get; set; }
-        public string ImdbId { get; internal set; }
+        public string Title { get; set; }
+        public string Year { get; set; }
+        public string Rated { get; set; }
+        public string Released { get; set; }
+        public string Runtime { get; set; }
+        public string Genre { get; set; }
+        public string Director { get; set; }
+        public string Writer { get; set; }
+        public string Actors { get; set; }
+        public string Plot { get; set; }
+        public string Language { get; set; }
+        public string Country { get; set; }
+        public string Awards { get; set; }
+        public string Poster { get; set; }
+        public string Metascore { get; set; }
+        public string imdbRating { get; set; }
+        public string imdbVotes { get; set; }
+        public string imdbID { get; set; }
+        public string Type { get; set; }
+        public string Response { get; set; }
     }
-
-    public class ExternalIdsResults
-    {
-        public string imdb_id { get; set; }
-        public string freebase_mid { get; set; }
-        public string freebase_id { get; set; }
-        public string tvdb_id { get; set; }
-        public string tvrage_id { get; set; }
-        public int id { get; set; }
-    }
-
-    public class ApiResult<T>
-    {
-        public int page { get; set; }
-        public List<T> results { get; set; }
-        public int total_results { get; set; }
-        public int total_pages { get; set; }
-    }
-
 }
