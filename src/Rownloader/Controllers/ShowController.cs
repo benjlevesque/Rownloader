@@ -31,8 +31,12 @@ namespace Rownloader.Controllers
     }
     public class ShowViewModel
     {
+        public int ImdbId { get; internal set; }
         public string Name { get; set; }
         public IEnumerable<SeasonViewModel> Seasons { get; set; }
+        public string ThumbnailUrl { get; internal set; }
+        public double VoteAverage { get; internal set; }
+        public int VoteCount { get; internal set; }
     }
     public class ShowController : Controller
     {
@@ -41,10 +45,31 @@ namespace Rownloader.Controllers
         {
             Options = optionsAccessor.Value;
         }
+        public static Result GetApiInfo(string showName)
+        {
+            showName = showName.ToLower();
+            if (!ApiResults.ContainsKey(showName))
+            {
+                using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
+                {
+                    using (var response = client.GetAsync(FormatUrl("search/tv", new { query = showName })).Result)
+                    {
+                        var str = response.Content.ReadAsStringAsync().Result;
+                        var data = JsonConvert.DeserializeObject<ApiResult<Result>>(str);
+                        //var name = response.Data.;
+
+
+                        ApiResults.Add(showName, data.results.FirstOrDefault());
+                    }
+                }
+            }
+            var api = ApiResults[showName];
+            return api ?? new Result();
+        }
         public IActionResult Index(string query)
         {
             var regex = new Regex("(?<name>[a-zA-Z.0-9]*).[Ss](?<season>[0-9]{2})[Ee](?<episode>[0-9]{2}).(?<quality>[a-zA-Z0-9]*).(.*).(?<extension>mkv|avi)");
-            var files = Directory.GetFiles(Options.FolderPath).Select(x => regex.Match(x)).Where(m => m.Success).Select(x =>
+            var shows = Directory.GetFiles(Options.FolderPath).Select(x => regex.Match(x)).Where(m => m.Success).Select(x =>
             new
             {
                 Filename = x.Value,
@@ -55,9 +80,14 @@ namespace Rownloader.Controllers
                 Extension = x.Groups["extension"].Value
             })
             .Where(x => query == null || x.Filename.ToLower().Contains(query.ToLower()))
+            .ToList()
             .GroupBy(x => x.Name).Select(x => new ShowViewModel
             {
                 Name = x.Key,
+                ThumbnailUrl = ImageRootUrl + GetApiInfo(x.Key).poster_path,
+                ImdbId = GetApiInfo(x.Key).id,
+                VoteAverage = GetApiInfo(x.Key).vote_average,
+                VoteCount = GetApiInfo(x.Key).vote_count,
                 Seasons = x.GroupBy(y => y.Season).Select(y => new SeasonViewModel
                 {
                     Season = y.Key,
@@ -73,11 +103,10 @@ namespace Rownloader.Controllers
                 }).OrderBy(y => y.Season)
             }).OrderBy(x => x.Name);
 
-
-            return View(files);
+            return View(shows);
         }
 
-        string FormatUrl(string path, IDictionary<string, object> parameters = null)
+        static string FormatUrl(string path, IDictionary<string, object> parameters = null)
         {
             if (parameters == null)
                 return path;
@@ -86,7 +115,7 @@ namespace Rownloader.Controllers
 
             return $"{path}?{string.Join("&", parameters.Select(x => $"{x.Key}={x.Value}"))}";
         }
-        string FormatUrl(string path, object parameters = null)
+        static string FormatUrl(string path, object parameters = null)
         {
             return FormatUrl(path, parameters?.GetType().GetProperties(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
                 .ToDictionary
@@ -96,20 +125,9 @@ namespace Rownloader.Controllers
                 ));
         }
 
-        public async Task<ActionResult> Thumbnail(string showName)
-        {
-            using (var client = new HttpClient { BaseAddress = new Uri("http://api.themoviedb.org/3/") })
-            {
-                using (var response = await client.GetAsync(FormatUrl("search/tv", new { query = showName })))
-                {
-                    var str = await response.Content.ReadAsStringAsync();
-                    var data = JsonConvert.DeserializeObject<ApiResult<Result>>(str);
-                    //var name = response.Data.;
 
-                    return Redirect("http://image.tmdb.org/t/p/w92" + data.results.FirstOrDefault()?.poster_path);
-                }
-            }
-        }
+        private const string ImageRootUrl = "http://image.tmdb.org/t/p/w92";
+        private static IDictionary<string, Result> ApiResults = new Dictionary<string, Result>();
 
         public void Download(string filename)
         {

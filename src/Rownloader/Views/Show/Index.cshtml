@@ -6,11 +6,22 @@
 {
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h3>@show.Name</h3>
+            <h3>
+                @show.Name
+                <small class="pull-right">
+                    <a href="http://www.imdb.com/title/tt@(show.ImdbId)">
+                        <i class="fa fa-video-camera"></i>
+                    </a>
+                    <i class="fa fa-line-chart"></i> @show.VoteAverage (@show.VoteCount votes)
+
+                </small>
+
+            </h3>
         </div>
         <div class="panel-body">
             <div class="col-md-2">
-                <img src="@Url.Action("Thumbnail", new { showName = show.Name })" />
+                <img src="@show.ThumbnailUrl" />
+
             </div>
             <div class="col-md-10">
                 @foreach (var season in show.Seasons)
