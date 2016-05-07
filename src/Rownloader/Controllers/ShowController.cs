@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNet.Mvc;
 using Microsoft.Extensions.OptionsModel;
-using RestSharp;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -77,7 +76,8 @@ namespace Rownloader.Controllers
 
         public ActionResult Thumbnail(string showName)
         {
-            var client = new RestClient("http://api.themoviedb.org/3/");
+            throw new NotImplementedException();
+            /*var client = new RestClient("http://api.themoviedb.org/3/");
             var request = new RestRequest("search/tv");
             request.AddParameter("api_key", "0f7de12810d35bd62dd0e93978f39cae");
             request.AddParameter("query", showName);
@@ -87,7 +87,7 @@ namespace Rownloader.Controllers
             //var name = response.Data.;
 
             return Redirect("http://image.tmdb.org/t/p/w92" + response.Data.results.First().poster_path);
-
+            */
         }
 
         public void Download(string filename)
