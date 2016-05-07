@@ -14,6 +14,10 @@ using Rownloader.Services;
 
 namespace Rownloader
 {
+    public class AppSettings
+    {
+        public string FolderPath { get; set; }
+    }
     public class Startup
     {
         public Startup(IHostingEnvironment env)
@@ -53,6 +57,8 @@ namespace Rownloader
             // Add application services.
             services.AddTransient<IEmailSender, AuthMessageSender>();
             services.AddTransient<ISmsSender, AuthMessageSender>();
+
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -98,6 +104,8 @@ namespace Rownloader
                     name: "default",
                     template: "{controller=Show}/{action=Index}/{id?}");
             });
+
+
         }
 
         // Entry point for the application.

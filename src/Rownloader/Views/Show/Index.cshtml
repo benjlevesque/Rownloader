@@ -9,36 +9,42 @@
             <h3>@show.Name</h3>
         </div>
         <div class="panel-body">
+            <div class="col-md-2">
+                <img src="@Url.Action("Thumbnail", new { showName = show.Name })" />
+            </div>
+            <div class="col-md-10">
+                @foreach (var season in show.Seasons)
+                {
 
-            @foreach (var season in show.Seasons)
-            {
-
-                <h4>Season #@season.Season</h4>
-                <table class="table table-striped">
-                    <thead>
-                        <tr>
-                            <th></th>
-                            <th>Episode</th>
-                            <th>Quality</th>
-                            <th>Extension</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var episode in season.Episodes)
-                        {
+                    <h4>Season #@season.Season</h4>
+                    <table class="table table-striped">
+                        <thead>
                             <tr>
-                                <td>
-                                    <a asp-action="Download" asp-route-filename="@episode.Filename"><i class="fa fa-download"></i></a>
-                                </td>
-                                <td>@episode.Episode</td>
-                                <td>@episode.Quality</td>
-                                <td>@episode.Extension</td>
+                                <th></th>
+                                <th>Episode</th>
+                                <th>Quality</th>
+                                <th>Info</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var episode in season.Episodes)
+                            {
+                                <tr>
+                                    <td>
+                                        <a asp-action="Download" asp-route-filename="@episode.Filename"><i class="fa fa-download"></i></a>
+                                    </td>
+                                    <td>@episode.Episode</td>
+                                    <td>@episode.Quality</td>
+                                    <td>
+                                        ext. @episode.Extension<br />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
 
-            }
+                }
+            </div>
         </div>
     </div>
 }
